@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+from pyserini import encode
 import torch
 from huggingface_hub import hf_hub_download
 from PIL import Image
@@ -182,8 +183,8 @@ class UniIRQueryConverter:
         return self.data
 
 class UniIRQueryEncoder(UniIREncoder):
-    def __init__(self, model_name: str, device='cuda:0', l2_norm=False, **kwargs: Any):
-        super().__init__(model_name, device, l2_norm, **kwargs)
+    def __init__(self, encoder_dir: str, device='cuda:0', l2_norm=False, **kwargs: Any):
+        super().__init__(encoder_dir, device, l2_norm, **kwargs)
 
     def encode(self, query_info, **kwargs: Any):
         if kwargs.get('fp16', False):
