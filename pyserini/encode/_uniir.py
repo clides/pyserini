@@ -1,16 +1,21 @@
-from typing import Any
-import sys
-from pathlib import Path
+import json
+import random
 from abc import ABC, abstractmethod
+from typing import Any
 
+import pandas as pd
 import torch
+import yaml
 from huggingface_hub import hf_hub_download
-from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from sklearn.preprocessing import normalize
+from torch.utils.data import DataLoader, Dataset
 
-from pyserini.uniir.src.data.mbeir_dataset import MBEIRCandidatePoolCollator, MBEIRInferenceOnlyCollator
-from pyserini.uniir.src.data.preprocessing.utils import format_string, hash_did, hash_qid
+from pyserini.uniir import (BLIPFeatureFusion, BLIPScoreFusion,
+                            CLIPFeatureFusion, CLIPScoreFusion,
+                            MBEIRCandidatePoolCollator,
+                            MBEIRInferenceOnlyCollator, format_string,
+                            hash_did, hash_qid)
 
 class CustomCorpusDataset(Dataset):  
     def __init__(self, batch_info, img_preprocess_fn, **kwargs):
@@ -68,34 +73,32 @@ class UniIRDatasetConverter:
 
 
 MODEL_REGISTRY = {
-    "clip": {
-        "sf": ("pyserini.uniir.src.models.uniir_clip.clip_scorefusion.clip_sf", "CLIPScoreFusion", "CLIP_SF"),
-        "ff": ("pyserini.uniir.src.models.uniir_clip.clip_featurefusion.clip_ff", "CLIPFeatureFusion", "CLIP_FF"),
-    },
-    "blip": {
-        "sf": ("pyserini.uniir.src.models.uniir_blip.blip_scorefusion.blip_sf", "BLIPScoreFusion", "BLIP_SF"),
-        "ff": ("pyserini.uniir.src.models.uniir_blip.blip_featurefusion.blip_ff", "BLIPFeatureFusion", "BLIP_FF"),
-    }
+    "clip_ff": (CLIPFeatureFusion, "CLIP_FF"),
+    "clip_sf": (CLIPScoreFusion, "CLIP_SF"),
+    "blip_ff": (BLIPFeatureFusion, "BLIP_FF"),
+    "blip_sf": (BLIPScoreFusion, "BLIP_SF"),
 }
+
+
 class UniIREncoder(ABC):
     def __init__(self, model_name: str, device='cuda:0', l2_norm=False, **kwargs: Any):
         clip_vision_model = "ViT-L/14" if "large" in model_name else "ViT-B/32"
 
-        model_type = "clip" if "clip" in model_name else "blip" if "blip" in model_name else None
-        fusion_type = "ff" if "ff" in model_name else "sf"  # default to sf
-
-        if model_type is None:
+        model_key = next((key for key in MODEL_REGISTRY if key in model_name), None)
+        if not model_key:
             raise ValueError(f"Unsupported model name for UniIR: {model_name}")
 
-        import_path, class_name, model_dir = MODEL_REGISTRY[model_type][fusion_type]
-        module = __import__(import_path, fromlist=[class_name])
-        ModelClass = getattr(module, class_name)
+        ModelClass, model_dir = MODEL_REGISTRY[model_key]
         model = ModelClass(model_name=clip_vision_model, device=device)
 
-        checkpoint_path = hf_hub_download(
-            repo_id="TIGER-Lab/UniIR",
-            filename=f"checkpoint/{model_dir}/{model_name}.pth"
-        )
+        try:
+            checkpoint_path = hf_hub_download(
+                repo_id="TIGER-Lab/UniIR",
+                filename=f"checkpoint/{model_dir}/{model_name}.pth"
+            )
+        except Exception as e:
+            raise ValueError(f"Model checkpoint not found: {e}. Please check the model name or ensure the model is available on Hugging Face Hub: https://huggingface.co/TIGER-Lab/UniIR/tree/main/checkpoint.")
+
         model.load_state_dict(torch.load(checkpoint_path, map_location=device, weights_only=False)["model"])
         model.eval()
         model = model.to(device)
