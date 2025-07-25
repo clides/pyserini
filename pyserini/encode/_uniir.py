@@ -20,6 +20,7 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 from types import SimpleNamespace
 
+import pandas as pd
 import torch
 import faiss
 from huggingface_hub import hf_hub_download
