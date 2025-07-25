@@ -9,13 +9,8 @@ from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from sklearn.preprocessing import normalize
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(PROJECT_ROOT))
-DEPENDENCY_PATH = (Path(__file__).resolve().parents[3] / "UniIR" / "src").resolve()
-sys.path.append(str(DEPENDENCY_PATH))
-
-from data.mbeir_dataset import MBEIRCandidatePoolCollator, MBEIRInferenceOnlyCollator
-from data.preprocessing.utils import format_string, hash_did, hash_qid
+from pyserini.uniir.src.data.mbeir_dataset import MBEIRCandidatePoolCollator, MBEIRInferenceOnlyCollator
+from pyserini.uniir.src.data.preprocessing.utils import format_string, hash_did, hash_qid
 
 class CustomCorpusDataset(Dataset):  
     def __init__(self, batch_info, img_preprocess_fn, **kwargs):
@@ -74,12 +69,12 @@ class UniIRDatasetConverter:
 
 MODEL_REGISTRY = {
     "clip": {
-        "sf": ("models.uniir_clip.clip_scorefusion.clip_sf", "CLIPScoreFusion", "CLIP_SF"),
-        "ff": ("models.uniir_clip.clip_featurefusion.clip_ff", "CLIPFeatureFusion", "CLIP_FF"),
+        "sf": ("pyserini.uniir.src.models.uniir_clip.clip_scorefusion.clip_sf", "CLIPScoreFusion", "CLIP_SF"),
+        "ff": ("pyserini.uniir.src.models.uniir_clip.clip_featurefusion.clip_ff", "CLIPFeatureFusion", "CLIP_FF"),
     },
     "blip": {
-        "sf": ("models.uniir_blip.blip_scorefusion.blip_sf", "BLIPScoreFusion", "BLIP_SF"),
-        "ff": ("models.uniir_blip.blip_featurefusion.blip_ff", "BLIPFeatureFusion", "BLIP_FF"),
+        "sf": ("pyserini.uniir.src.models.uniir_blip.blip_scorefusion.blip_sf", "BLIPScoreFusion", "BLIP_SF"),
+        "ff": ("pyserini.uniir.src.models.uniir_blip.blip_featurefusion.blip_ff", "BLIPFeatureFusion", "BLIP_FF"),
     }
 }
 class UniIREncoder(ABC):
