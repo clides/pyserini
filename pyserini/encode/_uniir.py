@@ -22,7 +22,6 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 from types import SimpleNamespace
 
-import pandas as pd
 import torch
 import faiss
 import pandas as pd
