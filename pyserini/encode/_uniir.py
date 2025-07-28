@@ -1,11 +1,7 @@
-import json
-import random
 from abc import ABC, abstractmethod
 from typing import Any
 
-import pandas as pd
 import torch
-import yaml
 from huggingface_hub import hf_hub_download
 from PIL import Image
 from sklearn.preprocessing import normalize
@@ -14,8 +10,8 @@ from torch.utils.data import DataLoader, Dataset
 from pyserini.uniir import (BLIPFeatureFusion, BLIPScoreFusion,
                             CLIPFeatureFusion, CLIPScoreFusion,
                             MBEIRCandidatePoolCollator,
-                            MBEIRInferenceOnlyCollator, format_string,
-                            hash_did, hash_qid)
+                            format_string,
+                            hash_did)
 
 class CustomCorpusDataset(Dataset):  
     def __init__(self, batch_info, img_preprocess_fn, **kwargs):
