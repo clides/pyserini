@@ -15,13 +15,13 @@
 #
 
 import json
+import yaml
 import random
 from abc import ABC, abstractmethod
 from typing import Any
 
 import pandas as pd
 import torch
-import yaml
 from huggingface_hub import hf_hub_download
 from PIL import Image
 from sklearn.preprocessing import normalize
