@@ -15,13 +15,13 @@
 #
 
 import json
-import yaml
 import random
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
 
 import pandas as pd
 import torch
+import yaml
 from huggingface_hub import hf_hub_download
 from PIL import Image
 from sklearn.preprocessing import normalize
@@ -29,8 +29,10 @@ from torch.utils.data import DataLoader, Dataset
 
 from pyserini.uniir import (BLIPFeatureFusion, BLIPScoreFusion,
                             CLIPFeatureFusion, CLIPScoreFusion,
-                            MBEIRCandidatePoolCollator, format_string,
+                            MBEIRCandidatePoolCollator,
+                            MBEIRInferenceOnlyCollator, format_string,
                             hash_did, hash_qid)
+
 
 class CustomCorpusDataset(Dataset):
     def __init__(self, batch_info, img_preprocess_fn, **kwargs):
@@ -47,11 +49,11 @@ class CustomCorpusDataset(Dataset):
         self.data = data
         self.img_preprocess_fn = img_preprocess_fn
         self.kwargs = kwargs
-      
-    def __len__(self):  
+
+    def __len__(self):
         return len(self.data)
 
-    def __getitem__(self, idx):  
+    def __getitem__(self, idx):
         entry = self.data[idx]
         img_path = entry.get("img_path", None)
         if not img_path:
@@ -141,7 +143,14 @@ class UniIRCorpusEncoder(UniIREncoder):
     def __init__(self, model_name: str, device="cuda:0", l2_norm=False, **kwargs: Any):
         super().__init__(model_name, device, l2_norm, **kwargs)
 
-    def encode(self, dids, img_paths, modalitys, txts, **kwargs: Any):
+    def encode(
+        self,
+        dids: List[int],
+        img_paths: List[str],
+        modalitys: List[str],
+        txts: List[str],
+        **kwargs: Any,
+    ):
         if kwargs.get("fp16", False):
             self.model.half()
         else:
@@ -176,49 +185,59 @@ class CustomQueryDataset(Dataset):
         self.query_info = query_info
         self.img_preprocess_fn = img_preprocess_fn
         self.kwargs = kwargs
-        
+
     def __len__(self):
         return len(self.query_info)
-        
+
     def __getitem__(self, idx):
         entry = self.query_info[idx]
-          
+
         query_img_path = entry.get("query_img_path", None)
         if query_img_path:
             img = Image.open(query_img_path).convert("RGB")
             img = self.img_preprocess_fn(img)
         else:
             img = None
-          
+
         query_txt = entry.get("query_txt", "")
         query_txt = format_string(query_txt)
-          
-        query = {
-            "txt": query_txt,
-            "img": img
-        }
-          
+
+        query = {"txt": query_txt, "img": img}
+
         instance = {"query": query}
-          
+
         qid = entry.get("qid", None)
         if qid:
             instance.update({"qid": hash_qid(qid)})
-              
+
         return instance
+
 
 class UniIRQueryConverter:
     def __init__(self, query_info, img_preprocess_fn, tokenizer, **kwargs):
         dataset = CustomQueryDataset(query_info, img_preprocess_fn, **kwargs)
-        collator = MBEIRInferenceOnlyCollator(tokenizer=tokenizer, image_size=(224, 224))
+        collator = MBEIRInferenceOnlyCollator(
+            tokenizer=tokenizer, image_size=(224, 224)
+        )
         self.data = DataLoader(dataset, batch_size=1, collate_fn=collator)
-  
+
     def get_data(self):
         return self.data
 
+
 class UniIRQueryEncoder(UniIREncoder):
-    def __init__(self, encoder_dir: str, device='cuda:0', l2_norm=False, instruction_config=None, **kwargs: Any):
+    def __init__(
+        self,
+        encoder_dir: str,
+        device="cuda:0",
+        l2_norm=False,
+        instruction_config=None,
+        **kwargs: Any,
+    ):
         if instruction_config is not None:
-            instructions, modality_info, random_instruction = self._load_instruction_config(instruction_config)
+            instructions, modality_info, random_instruction = (
+                self._load_instruction_config(instruction_config)
+            )
             self._instructions = instructions
             self._modality_info = modality_info
             self._random_instruction = random_instruction
@@ -226,27 +245,29 @@ class UniIRQueryEncoder(UniIREncoder):
 
     def _load_instruction_config(self, instruction_config):
         try:
-            with open(instruction_config, 'r') as f:
+            with open(instruction_config, "r") as f:
                 config = yaml.safe_load(f)
-            instruction_file = config.get('instruction_file', None)
-            corpus_file = config.get('corpus_file', None)
-            dataset_id = config.get('dataset_id', None)
-            random_instruction = config.get('random_instruction', False)
+            instruction_file = config.get("instruction_file", None)
+            corpus_file = config.get("corpus_file", None)
+            dataset_id = config.get("dataset_id", None)
+            random_instruction = config.get("random_instruction", False)
             if not instruction_file or not corpus_file or not dataset_id:
-                raise ValueError("Instruction file or corpus file not specified in the config.")
+                raise ValueError(
+                    "Instruction file or corpus file not specified in the config."
+                )
         except Exception as e:
             raise ValueError(f"Error loading instruction config: {e}")
 
         try:
-            df = pd.read_csv(instruction_file, sep='\t')
-            filtered = df[df['dataset_id'].astype(int) == int(dataset_id)]
+            df = pd.read_csv(instruction_file, sep="\t")
+            filtered = df[df["dataset_id"].astype(int) == int(dataset_id)]
             instructions = filtered.to_dict(orient="records")
 
             modality_info = {}
             with open(corpus_file, "r") as f:
                 for line in f:
                     corpus = json.loads(line)
-                    modality_info[corpus['did']] = corpus['modality']
+                    modality_info[corpus["did"]] = corpus["modality"]
 
             return instructions, modality_info, random_instruction
         except Exception as e:
@@ -255,26 +276,41 @@ class UniIRQueryEncoder(UniIREncoder):
     def _get_instruction_prompt(self, q_modality, c_modality) -> str:
         instructions = self._instructions
         for instruction in instructions:
-            if instruction['query_modality'] == q_modality and instruction['cand_modality'] == c_modality:
+            if (
+                instruction["query_modality"] == q_modality
+                and instruction["cand_modality"] == c_modality
+            ):
                 if self._random_instruction:
-                    prompts = [instruction[k] for k in instruction if k.startswith('prompt_')]
+                    prompts = [
+                        instruction[k] for k in instruction if k.startswith("prompt_")
+                    ]
                     return random.choice(prompts)
                 else:
-                    return instruction['prompt_1']
+                    return instruction["prompt_1"]
 
-    def encode(self, qid, query_txt, query_img_path, query_modality, pos_cand_list, **kwargs: Any):
-        if kwargs.get('fp16', False):
+    def encode(
+        self,
+        qid: int,
+        query_txt: str,
+        query_img_path: str,
+        query_modality: str,
+        pos_cand_list: List[str],
+        **kwargs: Any,
+    ):
+        if kwargs.get("fp16", False):
             self.model.half()
         else:
             self.model.float()
 
-        cand_modality = self._modality_info.get(pos_cand_list[0], 'text') if hasattr(self, '_modality_info') else 'text'
-        
+        cand_modality = (
+            self._modality_info.get(pos_cand_list[0], "text")
+            if hasattr(self, "_modality_info")
+            else "text"
+        )
 
-        if hasattr(self, '_instructions'):
+        if hasattr(self, "_instructions"):
             prompt = self._get_instruction_prompt(
-                q_modality=query_modality,
-                c_modality=cand_modality
+                q_modality=query_modality, c_modality=cand_modality
             )
             query_txt = f"{prompt} {query_txt}" if prompt else query_txt
 
@@ -301,5 +337,5 @@ class UniIRQueryEncoder(UniIREncoder):
             query_embeddings, _ = self.model.encode_mbeir_batch(batch)
             query_embeddings = query_embeddings.cpu().numpy()
             if self.l2_norm:
-                query_embeddings = normalize(query_embeddings, axis=1, norm='l2')
+                query_embeddings = normalize(query_embeddings, axis=1, norm="l2")
             return query_embeddings
