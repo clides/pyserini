@@ -29,7 +29,6 @@ def _load_module(name, rel_path):
 
 mbeir = _load_module("mbeir", "data/mbeir_dataset.py")
 MBEIRCandidatePoolCollator = mbeir.MBEIRCandidatePoolCollator
-MBEIRInferenceOnlyCollator = mbeir.MBEIRInferenceOnlyCollator
 
 clip_sf_model = _load_module("clip_sf_model", "models/uniir_clip/clip_scorefusion/clip_sf.py")
 CLIPScoreFusion = clip_sf_model.CLIPScoreFusion
@@ -43,4 +42,3 @@ BLIPFeatureFusion = blip_ff_model.BLIPFeatureFusion
 utils = _load_module("utils", "data/preprocessing/utils.py")
 format_string = utils.format_string
 hash_did = utils.hash_did
-hash_qid = utils.hash_qid
