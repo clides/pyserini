@@ -6,6 +6,7 @@ from huggingface_hub import hf_hub_download
 from PIL import Image
 from sklearn.preprocessing import normalize
 from torch.utils.data import DataLoader, Dataset
+from torch.cuda.amp import autocast
 
 from pyserini.uniir import (BLIPFeatureFusion, BLIPScoreFusion,
                             CLIPFeatureFusion, CLIPScoreFusion,
@@ -130,10 +131,7 @@ class UniIRCorpusEncoder(UniIREncoder):
         txts: Optional[List[str]] = None,
         **kwargs: Any,
     ):
-        if kwargs.get("fp16", False):
-            self.model.half()
-        else:
-            self.model.float()
+        use_fp16 = kwargs.get("fp16", False)
 
         batch_len = len(dids)
         batch_info = {
@@ -153,7 +151,10 @@ class UniIRCorpusEncoder(UniIREncoder):
             for k, v in batch.items():
                 if isinstance(v, torch.Tensor):
                     batch[k] = v.to(self.device)
-            corpus_embeddings, _ = self.model.encode_mbeir_batch(batch)
+            
+            with torch.cuda.amp.autocast(enabled=use_fp16):
+                corpus_embeddings, _ = self.model.encode_mbeir_batch(batch)  
+
             corpus_embeddings = corpus_embeddings.cpu().numpy()
             if self.l2_norm:
                 corpus_embeddings = normalize(corpus_embeddings, axis=1, norm="l2")
