@@ -157,5 +157,6 @@ class UniIRCorpusEncoder(UniIREncoder):
 
             corpus_embeddings = corpus_embeddings.cpu().numpy()
             if self.l2_norm:
+                corpus_embeddings = corpus_embeddings.astype('float32')
                 faiss.normalize_L2(corpus_embeddings)
             return corpus_embeddings
