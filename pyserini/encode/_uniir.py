@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional
 
 import torch
+import faiss
 from huggingface_hub import hf_hub_download
 from PIL import Image
-from sklearn.preprocessing import normalize
 from torch.utils.data import DataLoader, Dataset
 from torch.cuda.amp import autocast
 
@@ -152,10 +152,10 @@ class UniIRCorpusEncoder(UniIREncoder):
                 if isinstance(v, torch.Tensor):
                     batch[k] = v.to(self.device)
             
-            with torch.cuda.amp.autocast(enabled=use_fp16):
+            with autocast(enabled=use_fp16):
                 corpus_embeddings, _ = self.model.encode_mbeir_batch(batch)  
 
             corpus_embeddings = corpus_embeddings.cpu().numpy()
             if self.l2_norm:
-                corpus_embeddings = normalize(corpus_embeddings, axis=1, norm="l2")
+                faiss.normalize_L2(corpus_embeddings)
             return corpus_embeddings
