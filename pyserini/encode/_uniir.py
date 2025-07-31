@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, List, Optional
 
 import torch
 from huggingface_hub import hf_hub_download
@@ -16,7 +16,7 @@ from pyserini.uniir import (BLIPFeatureFusion, BLIPScoreFusion,
 class CustomCorpusDataset(Dataset):
     def __init__(self, batch_info, img_preprocess_fn, **kwargs):
         data = []
-        num_records = len(batch_info["img_path"])
+        num_records = len(batch_info["did"])
         for i in range(num_records):
             record = {
                 "did": batch_info["did"][i],
@@ -125,9 +125,9 @@ class UniIRCorpusEncoder(UniIREncoder):
     def encode(
         self,
         dids: List[int],
-        img_paths: List[str],
-        modalitys: List[str],
-        txts: List[str],
+        img_paths: Optional[List[str]] = None,
+        modalitys: Optional[List[str]] = None,
+        txts: Optional[List[str]] = None,
         **kwargs: Any,
     ):
         if kwargs.get("fp16", False):
@@ -135,11 +135,12 @@ class UniIRCorpusEncoder(UniIREncoder):
         else:
             self.model.float()
 
+        batch_len = len(dids)
         batch_info = {
             "did": dids,
-            "img_path": img_paths,
-            "modality": modalitys,
-            "txt": txts,
+            "img_path": img_paths if img_paths else [None] * batch_len,
+            "modality": modalitys if modalitys else ["text"] * batch_len,
+            "txt": txts if txts else [""] * batch_len,
         }
         dataset = UniIRDatasetConverter(
             batch_info=batch_info,
