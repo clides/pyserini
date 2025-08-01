@@ -104,6 +104,7 @@ class UniIREncoder(ABC):
                 "model"
             ]
         )
+        model.float()
         model.eval()
         model = model.to(device)
 
