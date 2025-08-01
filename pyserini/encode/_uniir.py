@@ -6,12 +6,11 @@ import faiss
 from huggingface_hub import hf_hub_download
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
-from torch.cuda.amp import autocast
 
 from pyserini.uniir import (BLIPFeatureFusion, BLIPScoreFusion,
                             CLIPFeatureFusion, CLIPScoreFusion,
-                            MBEIRCandidatePoolCollator, format_string,
-                            hash_did)
+                            MBEIRCandidatePoolCollator, generate_embeds_and_ids_for_dataset_with_gather,
+                            format_string, hash_did)
 
 
 class CustomCorpusDataset(Dataset):
@@ -140,23 +139,21 @@ class UniIRCorpusEncoder(UniIREncoder):
             "modality": modalitys if modalitys else ["text"] * batch_len,
             "txt": txts if txts else [""] * batch_len,
         }
-        dataset = UniIRDatasetConverter(
+        dataloader = UniIRDatasetConverter(
             batch_info=batch_info,
             img_preprocess_fn=self.img_preprocess_fn,
             tokenizer=self.tokenizer,
         ).get_data()
 
-        with torch.no_grad():
-            batch = next(iter(dataset))
-            for k, v in batch.items():
-                if isinstance(v, torch.Tensor):
-                    batch[k] = v.to(self.device)
-            
-            with autocast(enabled=use_fp16):
-                corpus_embeddings, _ = self.model.encode_mbeir_batch(batch)  
+        corpus_embeddings, _ = generate_embeds_and_ids_for_dataset_with_gather(  
+            self.model,  
+            dataloader,  
+            device=self.device,  
+            use_fp16=use_fp16,  
+        )  
 
-            corpus_embeddings = corpus_embeddings.cpu().numpy()
-            if self.l2_norm:
-                corpus_embeddings = corpus_embeddings.astype('float32')
-                faiss.normalize_L2(corpus_embeddings)
-            return corpus_embeddings
+        if self.l2_norm:
+            corpus_embeddings = corpus_embeddings.astype('float32')
+            faiss.normalize_L2(corpus_embeddings)
+
+        return corpus_embeddings
