@@ -126,10 +126,16 @@ class JsonlCollectionIterator:
         """
         n_fields = len(self.fields)
 
-        # if all fields are under the key of info, read these rather than 'contents' 
-        if all([field in info for field in self.fields]):
-            return [info[field].strip() for field in self.fields]
+        direct_fields = [
+            str(info[field]).strip() 
+            if info.get(field, None) is not None 
+            else None 
+            for field in self.fields
+        ]
+        if any(f is not None for f in direct_fields):
+            return direct_fields
 
+        # Only check contents if all fields are None
         assert "contents" in info, f"contents not found in info: {info}"
         contents = info['contents']
         # whether to remove the final self.delimiter (especially \n)
@@ -174,7 +180,7 @@ class JsonlCollectionIterator:
                     for i in range(len(fields_info)):
                         if 'path' in self.fields[i]:
                             _info = fields_info[i]
-                            if not _info.startswith(("http://", "https://")):
+                            if _info and not _info.startswith(("http://", "https://")):
                                 fields_info[i] = os.path.join(self.collection_dir, fields_info[i])
                         all_info[self.fields[i]].append(fields_info[i])
         return all_info
@@ -207,7 +213,7 @@ class JsonlRepresentationWriter(RepresentationWriter):
 
     def write(self, batch_info, fields=None):
         for i in range(len(batch_info['id'])):
-            contents = "\n".join([batch_info[key][i] for key in fields])
+            contents = "\n".join([batch_info[key][i] if batch_info[key][i] is not None else "" for key in fields])
             vector = batch_info['vector'][i]
             vector = vector.tolist() if isinstance(vector, np.ndarray) else vector
             self.file.write(json.dumps({'id': batch_info['id'][i],
