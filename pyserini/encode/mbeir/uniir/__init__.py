@@ -3,7 +3,6 @@ from pathlib import Path
 
 # Path to submodule
 _vendor_path = Path(__file__).parent / "_uniir_vendor" / "src"
-MED_CONFIG_PATH = str(_vendor_path / "models" / "uniir_blip" / "backbone" / "configs" / "med_config.json")
 
 # Dynamically load modules
 def _load_module(name, rel_path):
@@ -30,6 +29,7 @@ def _load_module(name, rel_path):
 
 mbeir = _load_module("mbeir", "data/mbeir_dataset.py")
 MBEIRCandidatePoolCollator = mbeir.MBEIRCandidatePoolCollator
+MBEIRInferenceOnlyCollator = mbeir.MBEIRInferenceOnlyCollator
 
 clip_sf_model = _load_module("clip_sf_model", "models/uniir_clip/clip_scorefusion/clip_sf.py")
 CLIPScoreFusion = clip_sf_model.CLIPScoreFusion
@@ -43,6 +43,7 @@ BLIPFeatureFusion = blip_ff_model.BLIPFeatureFusion
 utils = _load_module("utils", "data/preprocessing/utils.py")
 format_string = utils.format_string
 hash_did = utils.hash_did
+hash_qid = utils.hash_qid
 
 embedder = _load_module("embedder", "common/mbeir_embedder.py")
 generate_embeds_and_ids_for_dataset_with_gather = embedder.generate_embeds_and_ids_for_dataset_with_gather
