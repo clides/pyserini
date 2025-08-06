@@ -113,9 +113,9 @@ class UniIRCorpusEncoder(UniIREncoder):
         batch_len = len(dids)
         batch_info = {
             "did": [hash_did(did) for did in dids],
-            "img_path": img_paths if img_paths else [None] * batch_len,
-            "modality": modalitys if modalitys else ["text"] * batch_len,
-            "txt": [format_string(txt) for txt in txts] if txts else [""] * batch_len,
+            "img_path": img_paths,
+            "modality": modalitys,
+            "txt": [format_string(txt) for txt in txts],
         }
         dataset = MBEIRCorpusDataset(batch_info, self.img_preprocess_fn)
         collator = MBEIRCandidatePoolCollator(
@@ -226,7 +226,7 @@ class UniIRQueryEncoder(UniIREncoder):
 
         query_info = [{
             "qid": hash_qid(qid),
-            "query_txt": format_string(query_txt) if query_txt else "",
+            "query_txt": format_string(query_txt),
             "query_img_path": query_img_path,
             "query_modality": query_modality,
             "candidate_modality": cand_modality,
