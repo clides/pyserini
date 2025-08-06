@@ -103,9 +103,9 @@ class UniIRCorpusEncoder(UniIREncoder):
     def encode(
         self,
         dids: List[int],
-        img_paths: Optional[List[str]] = None,
-        modalitys: Optional[List[str]] = None,
-        txts: Optional[List[str]] = None,
+        img_paths: List[str],
+        modalitys: List[str],
+        txts: List[str],
         **kwargs: Any,
     ):
         use_fp16 = kwargs.get("fp16", False)
