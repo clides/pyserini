@@ -282,23 +282,16 @@ def init_query_encoder(
         )
         if _encoder_class == "sentence" or "sentence" in encoder:
             kwargs.update(dict(pooling="mean", l2_norm=True))
-        elif _encoder_class == "contriever" or "contriever" in encoder:
+        if _encoder_class == "contriever" or "contriever" in encoder:
             kwargs.update(dict(pooling="mean", l2_norm=False))
-        elif _encoder_class == "openai-api" or "openai" in encoder:
+        if _encoder_class == "openai-api" or "openai" in encoder:
             kwargs.update(dict(max_length=max_length))
-        elif _encoder_class == "auto":
+        if _encoder_class == "auto":
             kwargs.update(dict(pooling=pooling, l2_norm=l2_norm, prefix=prefix))
-        elif _encoder_class == "uniir":
-            kwargs.update(dict(l2_norm=True, instruction_config=instruction_config))
-        elif _encoder_class == "clip" or "clip" in encoder:
+        if _encoder_class == "clip" or "clip" in encoder:
             kwargs.update(dict(l2_norm=True, prefix=prefix, multimodal=multimodal))
-<<<<<<< HEAD
-=======
-        elif _encoder_class == "uniir":
+        if _encoder_class == "uniir":
             kwargs.update(dict(l2_norm=True, instruction_config=instruction_config))
->>>>>>> 9d8d70a (add instructions injection for query embedding)
-        else:
-            kwargs.update(dict(pooling=pooling, l2_norm=l2_norm, prefix=prefix, multimodal=multimodal))
 
         return encoder_class(**kwargs)
 
