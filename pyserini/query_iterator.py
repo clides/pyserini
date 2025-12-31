@@ -209,26 +209,50 @@ class MBEIRQueryIterator(QueryIterator):
     @classmethod
     def from_topics(cls, topics_path: str):
         """Load M-BEIR topics from JSONL file"""
-        if not os.path.exists(topics_path):
-            raise FileNotFoundError(f'Topic {topics_path} Not Found')
+        if os.path.exists(topics_path):
+            topics = {}
+            order = []
+            with open(topics_path, 'r') as f:
+                for line in f:
+                    data = json.loads(line)
+                    try:
+                        topic_id = data['qid']
+                        topics[topic_id] = data
+                        order.append(topic_id)
+                    except Exception as e:
+                        raise ValueError(f'Error processing topic with qid {topic_id}: {e}')
 
-        topics = {}
-        order = []
-        with open(topics_path, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                try:
-                    topic_id = data['qid']
-                    topics[topic_id] = data
-                    order.append(topic_id)
-                except Exception as e:
-                    raise ValueError(f'Error processing topic with qid {topic_id}: {e}')
+            if not topics:
+                raise ValueError(f'No topics found in {topics_path}')
 
-        if not topics:
-            raise ValueError(f'No topics found in {topics_path}')
+            topic_dir = os.path.dirname(topics_path)
+            return cls(topics, order, topic_dir)
 
-        topic_dir = os.path.dirname(topics_path)
-        return cls(topics, order, topic_dir)
+        else:
+            try:
+                topics = get_topics(topics_path)
+                order = []
+                mbeir_topics = {}
+                for topic_id in topics:
+                    topic_data = topics[topic_id]
+                    mbeir_data = {
+                        'qid': topic_data['qid'],
+                        'query_txt': topic_data.get('query_txt', ''),
+                        'query_img_path': topic_data.get('query_img_path', None),
+                        'query_modality': topic_data['query_modality'],
+                    }
+                    mbeir_topics[topic_data['qid']] = mbeir_data
+                    order.append(topic_data['qid'])
+
+                from pyserini.util import download_and_unpack_index
+                target_path = download_and_unpack_index(
+                    url='https://huggingface.co/datasets/castorini/prebuilt-indexes-m-beir/resolve/main/mbeir_query_images_and_instructions.tar.gz',
+                    index_directory="collections/m-beir",
+                    verbose=True
+                )
+                return cls(mbeir_topics, order, target_path)
+            except (ValueError, FileNotFoundError):
+                raise FileNotFoundError(f'Topic {topics_path} Not Found')
 
 def get_query_iterator(topics_path: str, topics_format: TopicsFormat):
     mapping = {
