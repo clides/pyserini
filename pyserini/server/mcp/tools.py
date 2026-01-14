@@ -224,7 +224,12 @@ def register_tools(mcp: FastMCP, controller: SearchController):
 
     @mcp.tool(
         name='save_chat_image',
-        description='Save an image attached in the chat to a local image file'
+        description='''
+        Save an image attached in the chat to a local image file.
+        image_data: Base64 encoded image data from chat attachment
+        filename: Optional filename (will auto-generate if not provided)
+        output_dir: Directory to save the image (default: ".cache/pyserini/mcp-images")
+        '''
     )
     def save_chat_image(
         image_data: str,
