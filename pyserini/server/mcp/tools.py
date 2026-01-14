@@ -221,3 +221,84 @@ def register_tools(mcp: FastMCP, controller: SearchController):
         if not metric in EVAL_METRICS.keys():
             raise ValueError(f"{metric} is not a valid evaluation metric! Must be one of {EVAL_METRICS.keys()}")
         return controller.eval_hits(index_name, metric, query_id, hits, cutoff)
+
+    @mcp.tool(
+        name='save_chat_image',
+        description='Save an image attached in the chat to a local image file'
+    )
+    def save_chat_image(
+        image_data: str,
+        filename: str = None,
+        output_dir: str = None
+    ):
+        """
+        Save an image from chat to local disk.
+        
+        Args:
+            image_data: Base64 encoded image data from chat attachment
+            filename: Optional filename (will auto-generate if not provided)
+            output_dir: Directory to save the image (default: ".cache/pyserini/mcp-images")
+        
+        Returns:
+            Path to saved file and image info
+        """
+        try:
+            import os
+            from datetime import datetime
+            from io import BytesIO
+            from PIL import Image as PILImage
+            
+            # Use default path if not specified
+            if output_dir is None:
+                output_dir = os.path.join(".cache", "pyserini", "mcp-images")
+            
+            # Remove data URI prefix if present
+            if "base64," in image_data:
+                # Also extract the mime type if present
+                header, image_data = image_data.split("base64,")
+                if "image/" in header:
+                    # Extract format from data URI (e.g., "data:image/png;base64,")
+                    mime_type = header.split("image/")[1].split(";")[0]
+                else:
+                    mime_type = None
+            else:
+                mime_type = None
+            
+            # Decode the base64 image
+            img_bytes = base64.b64decode(image_data)
+            
+            # Open image to get format info
+            img = PILImage.open(BytesIO(img_bytes))
+            img_format = img.format.lower() if img.format else (mime_type or "png")
+            
+            # Create output directory if it doesn't exist
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # Generate filename if not provided
+            if filename is None:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"image_{timestamp}.{img_format}"
+            elif not filename.endswith(f".{img_format}"):
+                # Add extension if not present
+                filename = f"{filename}.{img_format}"
+            
+            # Full path
+            filepath = os.path.join(output_dir, filename)
+            
+            # Save the image
+            img.save(filepath)
+            
+            return {
+                "status": "success",
+                "filepath": os.path.abspath(filepath),
+                "filename": filename,
+                "format": img_format,
+                "size": f"{img.width}x{img.height}",
+                "file_size_bytes": os.path.getsize(filepath)
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
