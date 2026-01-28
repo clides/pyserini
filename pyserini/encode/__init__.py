@@ -34,6 +34,7 @@ from ._splade import SpladeDocumentEncoder, SpladeQueryEncoder
 from ._tct_colbert import TctColBertDocumentEncoder, TctColBertQueryEncoder
 from ._tok_freq import TokFreqQueryEncoder
 from ._unicoil import UniCoilEncoder, UniCoilDocumentEncoder, UniCoilQueryEncoder
+from .optional._lamra import LamRADocumentEncoder, LamRAQueryEncoder
 try:
     from pyserini.encode.optional._uniir import UniIRCorpusEncoder, UniIRQueryEncoder
 except ImportError:
@@ -56,6 +57,7 @@ document_encoder_class_map = {
     "arctic": ArcticDocumentEncoder,
     "uniir": UniIRCorpusEncoder,
     "splade": SpladeDocumentEncoder,
+    "lamra": LamRADocumentEncoder,
 }
 
 query_encoder_class_map = {
@@ -73,4 +75,5 @@ query_encoder_class_map = {
     "clip": ClipQueryEncoder,
     "arctic": ArcticQueryEncoder,
     "uniir": UniIRQueryEncoder,
+    "lamra": LamRAQueryEncoder,
 }

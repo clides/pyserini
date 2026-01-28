@@ -58,6 +58,8 @@ def init_encoder(encoder, encoder_class, device, pooling, l2_norm, prefix, multi
         kwargs.update(dict(l2_norm=True))
         if encoder_class is None: # check if the uniir-for-pyserini package is installed
             raise ValueError("UniIR's corpus encoder class is not available (as the uniir-for-pyserini package is not installed or CLIP is not installed). Please run 'pip install pyserini[optional]' to install the uniir-for-pyserini package and run 'pip install git+https://github.com/openai/CLIP.git' to install CLIP.")
+    if _encoder_class == 'lamra':
+        kwargs.update(dict(l2_norm=True))
     return encoder_class(**kwargs)
 
 
