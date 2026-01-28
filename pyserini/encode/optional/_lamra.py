@@ -108,7 +108,7 @@ class LamRADocumentEncoder(LamRABaseEncoder):
         self.l2_norm = l2_norm
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_name, 
-            torch_dtype=torch.bfloat16, 
+            dtype=torch.bfloat16, 
             low_cpu_mem_usage=True
         ).to(device)
         self.processor = AutoProcessor.from_pretrained(model_name)
@@ -157,7 +157,9 @@ class LamRAQueryEncoder(LamRABaseEncoder):
         self.device = device
         self.l2_norm = l2_norm
         self.model = Qwen2VLForConditionalGeneration.from_pretrained(
-            encoder_dir, torch_dtype=torch.bfloat16, low_cpu_mem_usage=True
+            encoder_dir, 
+            dtype=torch.bfloat16, 
+            low_cpu_mem_usage=True
         ).to(device)
         self.processor = AutoProcessor.from_pretrained(encoder_dir)
         self.tokenizer = self.processor.tokenizer
@@ -256,5 +258,10 @@ class LamRAQueryEncoder(LamRABaseEncoder):
             
             if self.l2_norm:
                 embeds = F.normalize(embeds, dim=-1)
+
+        embeds = embeds.float().cpu().numpy().flatten()
+        fp16 = kwargs.get("fp16", False)
+        if fp16:
+            embeds = embeds.astype("float16")
         
-        return embeds.cpu().numpy().flatten()
+        return embeds
