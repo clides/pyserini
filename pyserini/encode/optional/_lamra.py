@@ -137,8 +137,13 @@ class LamRADocumentEncoder(LamRABaseEncoder):
             
             if self.l2_norm:
                 embeds = F.normalize(embeds, dim=-1)
+
+        embeds = embeds.float().cpu().numpy()
+        fp16 = kwargs.get("fp16", False)
+        if fp16:
+            embeds = embeds.astype("float16")
         
-        return embeds.cpu().numpy()
+        return embeds
 
 class LamRAQueryEncoder(LamRABaseEncoder):
     def __init__(
