@@ -82,6 +82,11 @@ def trec_eval(
         cutoffs = list(map(int, cutoffs[7:].split(',')))
         # Get rid of the '-m' before the 'judged.xxx' option
         args.pop(idx - 1)
+    if any([i.startswith('success.') for i in args]):
+        idx = [i.startswith('success.') for i in args].index(True)
+        success_cutoffs = args.pop(idx)
+        success_cutoffs = list(map(int, success_cutoffs[8:].split(',')))
+        args.pop(idx - 1)
     # Non judge.k metrics are requested if any -m is left after popping the -m judged.k1,k2,... from args.
     non_judge_k_metrics = '-m' in args
 
@@ -129,6 +134,14 @@ def trec_eval(
             judged = len(pd.merge(run_cutoff[[0, 2]], qrels[[0, 2]], on=[0, 2])) / len(run_cutoff)
             metric_name = f'judged_{cutoff}'
             judged_result.append(f'{metric_name:22}\tall\t{judged:.4f}')
+        # Measure success@cutoffs
+        # success@k = (# of queries with at least one judged relevant doc in top-k) / (total # of queries)
+        for cutoff in success_cutoffs:  
+            run_cutoff = run.groupby(0).head(cutoff)  
+            success_counts = run_cutoff.merge(qrels[[0, 2]], on=[0, 2]).groupby(0).size() > 0  
+            success_rate = success_counts.sum() / run[0].nunique()  
+            metric_name = f'success_{cutoff}'  
+            judged_result.append(f'{metric_name:22}\tall\t{success_rate:.4f}')
         cmd = cmd_prefix + args[1:]
     else:
         cmd = cmd_prefix
