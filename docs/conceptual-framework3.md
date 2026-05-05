@@ -45,6 +45,7 @@ Start by creating the directories where we will store the encoded documents:
 mkdir encode
 cd encode
 mkdir nfcorpus.splade-v3
+cd ..
 ```
 
 We can then setup to use SPLADE-v3:
@@ -206,3 +207,12 @@ Before you move on, however, add an entry in the "Reproduction Log" at the botto
 + Results reproduced by [@raghav-ai](https://github.com/raghav-ai) on 2026-03-03 (commit [`99e2810`](https://github.com/castorini/pyserini/commit/99e28100860ac226a9e04cb4d65090d2d101d894))
 + Results reproduced by [@justin13888](https://github.com/justin13888) on 2026-03-18 (commit [`76c95a4`](https://github.com/castorini/pyserini/commit/76c95a455c4750e373ed2a9feb2528ffe8e5d3ba))
 + Results reproduced by [@namatvir](https://github.com/namatvir) on 2026-03-21 (commit [`b3922b8`](https://github.com/castorini/pyserini/commit/b3922b83765e4d5ec2a7878450fcade1370a1999))
++ Results reproduced by [@egekaya1](https://github.com/egekaya1) on 2026-03-29 (commit [`59dfd0e`](https://github.com/castorini/pyserini/commit/59dfd0e363681691efad161fac8cc734c2ebebb8))
++ Results reproduced by [@ShanaxWorld](https://github.com/ShanaxWorld) on 2026-04-05 (commit [`eba5ad0`](https://github.com/castorini/pyserini/commit/eba5ad0c6417d8c1e51c870789dcfa968de31776))
++ Results reproduced by [@h79yan](https://github.com/h79yan) on 2026-04-12 (commit [`b973a40`](https://github.com/castorini/pyserini/commit/b973a40904cde63a23257b9342a6b786ea43d52e))
++ Results reproduced by [@kwamearhinPORTFL](https://github.com/kwamearhinPORTFL) on 2026-04-23 (commit [`a8d2625`](https://github.com/castorini/pyserini/commit/a8d26258d37894379fc8a8988e9f49050e990940))
++ Results reproduced by [@Zixi-Sam-Tang](https://github.com/Zixi-Sam-Tang) on 2026-04-23 (commit [`b823fb0`](https://github.com/castorini/pyserini/commit/b823fb0af8c48e5a5163949dd499271336fe8f63))
++ Results reproduced by [@alex-wang101](https://github.com/alex-wang101) on 2026-04-25 (commit [`e9cd125`](https://github.com/castorini/pyserini/commit/e9cd1250b2fafa2b806fdb1214c121b2c6e991a7))
++ Results reproduced by [@Seun-Ajayi](https://github.com/Seun-Ajayi) on 2026-04-26 (commit [`1f12c67`](https://github.com/castorini/pyserini/commit/1f12c6760c95f36f87757d3efa0e3a7a7f2d9fc8))
++ Results reproduced by [@tqmsh](https://github.com/tqmsh) on 2026-05-03 (commit [`6adee73`](https://github.com/castorini/pyserini/commit/6adee73cf36255056a1c46dc5ecdb4b29b9ce1c5))
++ Results reproduced by [@mazleon](https://github.com/mazleon) on 2026-05-03 (commit [`6adee73`](https://github.com/castorini/pyserini/commit/6adee73cf36255056a1c46dc5ecdb4b29b9ce1c5))
